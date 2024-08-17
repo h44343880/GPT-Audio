@@ -4,7 +4,7 @@ import os
 from dotenv import load_dotenv
 
 
-def read_file():
+def read_prompt_file(file_path):
     pass
 
 
@@ -16,8 +16,11 @@ def get_emotion():
     pass
 
 
-def output_to_json():
-    pass
+def export_to_json(file_path, response): # TODO: need to change the "response" variable name?
+    json_string = json.dumps(response, ensure_ascii=False, indent=4)
+    print(json_string)
+    with open(file_path, 'w+') as f:
+        f.write(json_string)
 
 
 def main():
@@ -25,7 +28,7 @@ def main():
     client = OpenAI(
         api_key=os.getenv('OPENAI_API_KEY')
     )
-    file_path = "example.txt"  # input file path
+    file_path = "prompt.txt"  # input file path
     with open(file_path, 'r') as f:
         prompt = f.read()
     emotion_set = set(['開心', '難過'])
@@ -63,13 +66,8 @@ def main():
     json_output = {
         "content": sentence_emotion_array
     }
-
-    # Convert the dictionary to a JSON string
-    json_string = json.dumps(json_output, ensure_ascii=False, indent=4)
-    print(json_string)
-
-    with open('output.json', 'w+') as f:
-        f.write(json_string)
+    
+    export_to_json(file_path, json_output)
 
 
 if __name__ == "__main__":
