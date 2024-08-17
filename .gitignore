@@ -1,4 +1,4 @@
 .env
 venv/
-./audio
-audio*
+audio/
+**/__pycache__/
