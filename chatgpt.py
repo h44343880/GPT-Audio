@@ -31,7 +31,7 @@ def main():
     file_path = "prompt.txt"  # input file path
     with open(file_path, 'r') as f:
         prompt = f.read()
-    emotion_set = set(['開心', '難過'])
+    emotion_set = set(['開心', '難過']) # TODO: grab emotions from gpt sovits api
     article = {}
 
     response = client.chat.completions.create(
