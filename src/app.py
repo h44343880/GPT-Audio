@@ -6,11 +6,11 @@ import json
 from datetime import datetime
 
 def get_article(file_path):
-    with open(file_path, 'r') as f:
+    with open(file_path, 'r', encoding='UTF-8') as f:
         return f.read()
         
 def get_prompt(file_path):
-    with open(file_path, 'r') as f:
+    with open(file_path, 'r', encoding='UTF-8') as f:
         return f.read()
     
 # there may be a better way to do this
@@ -24,7 +24,7 @@ def append_article_to_prompt(prompt, article, emotions_list):
 def export_to_json(export_path, response): # TODO: need to change the "response" variable name?
     json_string = json.dumps({"content": response}, ensure_ascii=False, indent=4)
     print(json_string)
-    with open(export_path, 'w+') as f:
+    with open(export_path, 'w+', en) as f:
         f.write(json_string)
         
 def get_sentence_emotion_array(response):
@@ -40,7 +40,7 @@ def get_sentence_emotion_array(response):
     return sentence_emotion_array
 
 def save_audio(audio, file_path, character_name, sentence):
-    date = datetime.today().strftime('%Y-%m-%d-%H:%M:%S')
+    date = datetime.today().strftime('%m-%d-%H-%M-%S')
     filename = f"{character_name}_{sentence}_{date}.mp3"
     audio_file_path = f"{file_path}/{filename}"
     
@@ -51,6 +51,15 @@ def save_audio(audio, file_path, character_name, sentence):
     with open(audio_file_path, 'wb') as audio_file:
         audio_file.write(audio)
     return audio_file_path
+
+def get_audio_for_each_sentence(sentence_emotion_list, gpt_sovits_client, CHARACTER_NAME, AUDIO_PATH):
+    for sentence_emotion in sentence_emotion_list:
+        audio = gpt_sovits_client.get_audio_with_post(character=CHARACTER_NAME, emotion=sentence_emotion['emotion'], text=sentence_emotion['sentence'])
+        # save audio to audio directory
+        audio_file_path = save_audio(audio, AUDIO_PATH, CHARACTER_NAME, sentence_emotion['sentence'])
+        # save audio file path to sentence_emotion
+        sentence_emotion['audio_file_path'] = f"./{audio_file_path}" # TODO: need to change the path to absolute path
+
 
 def main():
     load_dotenv(dotenv_path=".env", override=True)
@@ -75,26 +84,25 @@ def main():
     # get emotions list
     gpt_sovits_client = GPTSoVITSClient(GPT_SOVITS_ENDPOINT)
     character_list = gpt_sovits_client.get_character_list()
-    # emotions_list = character_list[CHARACTER_NAME]
-    emotions_list = ["開心", "難過"] # TODO: GPT SoVITS need to update the emotions
+    emotions_list = character_list[CHARACTER_NAME]
+    # emotions_list = ["開心", "難過"] # TODO: GPT SoVITS need to update the emotions
     
     # finalize prompt
     finalized_prompt = append_article_to_prompt(prompt=prompt, emotions_list=emotions_list, article=article)
     
     # get emotions for each sentence
     openai_client = OpenAIClient(api_key=OPENAI_API_KEY)
-    response = openai_client.get_emotion(prompt=finalized_prompt) # TODO: need to retry if response format is incorrect
+    try:
+        response = openai_client.get_emotion(prompt=finalized_prompt) # TODO: need to retry if response format is incorrect
+    except ValueError as e:
+        # TODO: add to log
+        pass
     
     # parse response
     sentence_emotion_list = get_sentence_emotion_array(response)
     
     # get audio for each sentence
-    for sentence_emotion in sentence_emotion_list:
-        audio = gpt_sovits_client.get_audio_with_post(character=CHARACTER_NAME, emotion=sentence_emotion['emotion'], text=sentence_emotion['sentence'])
-        # save audio to audio directory
-        audio_file_path = save_audio(audio, AUDIO_PATH, CHARACTER_NAME, sentence_emotion['sentence'])
-        # save audio file path to sentence_emotion
-        sentence_emotion['audio_file_path'] = f"./{audio_file_path}" # TODO: need to change the path to absolute path
+    get_audio_for_each_sentence(sentence_emotion_list, gpt_sovits_client, CHARACTER_NAME, AUDIO_PATH) # TODO: maybe there's a better way?
         
     # export to json
     export_to_json(OUTPUT_PATH, sentence_emotion_list)
