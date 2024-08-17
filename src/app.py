@@ -24,7 +24,7 @@ def append_article_to_prompt(prompt, article, emotions_list):
 def export_to_json(export_path, response): # TODO: need to change the "response" variable name?
     json_string = json.dumps({"content": response}, ensure_ascii=False, indent=4)
     print(json_string)
-    with open(export_path, 'w+', en) as f:
+    with open(export_path, 'w+', encoding='UTF-8') as f:
         f.write(json_string)
         
 def get_sentence_emotion_array(response):
