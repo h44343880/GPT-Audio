@@ -85,7 +85,7 @@ def main():
     gpt_sovits_client = GPTSoVITSClient(GPT_SOVITS_ENDPOINT)
     character_list = gpt_sovits_client.get_character_list()
     emotions_list = character_list[CHARACTER_NAME]
-    # emotions_list = ["開心", "難過"] # TODO: GPT SoVITS need to update the emotions
+    # emotions_list = ["開心", "難過"]
     
     # finalize prompt
     finalized_prompt = append_article_to_prompt(prompt=prompt, emotions_list=emotions_list, article=article)
@@ -93,7 +93,7 @@ def main():
     # get emotions for each sentence
     openai_client = OpenAIClient(api_key=OPENAI_API_KEY)
     try:
-        response = openai_client.get_emotion(prompt=finalized_prompt) # TODO: need to retry if response format is incorrect
+        response = openai_client.get_emotion(prompt=finalized_prompt)
     except ValueError as e:
         # TODO: add to log
         pass
