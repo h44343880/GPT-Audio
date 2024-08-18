@@ -1,6 +1,4 @@
 .env
 venv/
-audio/
 **/__pycache__/
 __pycache__/
-output json/
