@@ -27,7 +27,7 @@ def export_to_json(export_path, response): # TODO: need to change the "response"
     with open(export_path, 'w+', encoding='UTF-8') as f:
         f.write(json_string)
         
-def get_sentence_emotion_array(response):
+def get_sentence_emotion_array(response, emotions_list):
     lines = response.split('\n')
     sentence_emotion_array = []
     for line in lines:
@@ -35,7 +35,7 @@ def get_sentence_emotion_array(response):
             sentence, emotion = line.split(' @')
             sentence_emotion_array.append({
                 'sentence': sentence,
-                'emotion': emotion.strip()
+                'emotion': next(filter(lambda emo: emo in emotion, emotions_list), None) # match emotion from emotions_list
             })
     return sentence_emotion_array
 
@@ -99,13 +99,14 @@ def main():
         pass
     
     # parse response
-    sentence_emotion_list = get_sentence_emotion_array(response)
+    sentence_emotion_list = get_sentence_emotion_array(response, emotions_list)
     
     # get audio for each sentence
     get_audio_for_each_sentence(sentence_emotion_list, gpt_sovits_client, CHARACTER_NAME, AUDIO_PATH) # TODO: maybe there's a better way?
         
     # export to json
-    export_to_json(OUTPUT_PATH, sentence_emotion_list)
+    date = datetime.today().strftime('%m-%d-%H-%M-%S')
+    export_to_json(OUTPUT_PATH + f'/{date}.json', sentence_emotion_list)
 
     # close gpt sovits connection    
     gpt_sovits_client.close()
