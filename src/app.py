@@ -33,6 +33,7 @@ def get_sentence_emotion_array(response, emotions_list):
     for line in lines:
         if '@' in line:
             sentence, emotion = line.split(' @')
+            sentence = sentence.replace("\'", "") # remove ' from sentence
             sentence_emotion_array.append({
                 'sentence': sentence,
                 'emotion': next(filter(lambda emo: emo in emotion, emotions_list), None) # match emotion from emotions_list
@@ -58,7 +59,7 @@ def get_audio_for_each_sentence(sentence_emotion_list, gpt_sovits_client, CHARAC
         # save audio to audio directory
         audio_file_path = save_audio(audio, AUDIO_PATH, CHARACTER_NAME, sentence_emotion['sentence'])
         # save audio file path to sentence_emotion
-        sentence_emotion['audio_file_path'] = f"./{audio_file_path}" # TODO: need to change the path to absolute path
+        sentence_emotion['audio_file_path'] = audio_file_path
 
 
 def main():
@@ -105,8 +106,7 @@ def main():
     get_audio_for_each_sentence(sentence_emotion_list, gpt_sovits_client, CHARACTER_NAME, AUDIO_PATH) # TODO: maybe there's a better way?
         
     # export to json
-    date = datetime.today().strftime('%m-%d-%H-%M-%S')
-    export_to_json(OUTPUT_PATH + f'/{date}.json', sentence_emotion_list)
+    export_to_json(f'{OUTPUT_PATH}/output.json', sentence_emotion_list)
 
     # close gpt sovits connection    
     gpt_sovits_client.close()
