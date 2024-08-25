@@ -1,7 +1,7 @@
 ﻿from dotenv import load_dotenv
 import os
-from gpt_sovits_client import GPTSoVITSClient
-from openai_client import OpenAIClient
+from src.gpt_sovits_client import GPTSoVITSClient
+from src.openai_client import OpenAIClient
 import json
 from datetime import datetime
 
