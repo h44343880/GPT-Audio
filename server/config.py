@@ -7,7 +7,7 @@ class Config(BaseSettings):
     ENV: str = "development"
     DEBUG: bool = True
     APP_HOST: str = "0.0.0.0"
-    APP_PORT: int = 7999
+    APP_PORT: int = 7998
 
 class LocalConfig(Config):
     ...
