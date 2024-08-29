@@ -2,7 +2,7 @@
 from fastapi.middleware import Middleware
 from fastapi.middleware.cors import CORSMiddleware
 
-from server.routes.human import router
+from server.routes.question import router
 
 
 def init_routers(app_: FastAPI) -> None:

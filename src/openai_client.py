@@ -22,7 +22,7 @@ class OpenAIClient:
         return response
 
 
-    def get_emotion(self, prompt, max_retries=100):
+    def get_emotion(self, prompt, max_retries=1):
         retries = 0
         while retries < max_retries:
             res = self.client.chat.completions.create(
