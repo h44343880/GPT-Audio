@@ -9,6 +9,7 @@ import os
 import json
 from src.app import main
 router = APIRouter()
+load_dotenv(dotenv_path=".env", override=True)
 
 def file_generator(file_paths: List[str]):
     for file_path in file_paths:
@@ -20,7 +21,7 @@ async def generate_audio(req: GPTAudioRequest) -> StreamingResponse:
     text_path = os.getenv('TEXT_PATH')
     with open(f"{text_path}", "w") as f:
         f.write(req.question)
-    load_dotenv(dotenv_path=".env", override=True)
+    
     main()
 
     # load audio file paths from output.json
