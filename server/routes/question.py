@@ -7,7 +7,7 @@ from typing import List
 from dotenv import load_dotenv
 import os
 import json
-from src.app import main
+from src.server_app import main
 router = APIRouter()
 load_dotenv(dotenv_path=".env", override=True)
 
