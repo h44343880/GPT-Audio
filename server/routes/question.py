@@ -29,7 +29,7 @@ def load_public_key_pem(pem_file_path):
     return public_key
 
 # Example usage
-pem_file_path = 'keys/jwtRSA256-public copy.pem'  # Specify the path to your PEM file
+pem_file_path = 'keys/jwtRSA256-public.pem'  # Specify the path to your PEM file
 public_key = load_public_key_pem(pem_file_path)
 
 def file_generator(file_paths: List[str]):
