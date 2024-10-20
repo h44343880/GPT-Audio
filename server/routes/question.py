@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request
 from fastapi.responses import FileResponse
 from server.dto import GPTAudioRequest
-from fastapi.responses import StreamingResponse
+from fastapi.responses import StreamingResponse, JSONResponse
 from typing import List
 
 from dotenv import load_dotenv
@@ -37,16 +37,24 @@ def file_generator(file_paths: List[str]):
         with open(file_path, "rb") as file:
             yield file.read()
 
-@router.post("/GPTAudio/")
-async def generate_audio(req: GPTAudioRequest, request: Request) -> StreamingResponse:
-    access_token = request.headers['Authorization'].split(' ')[1]
-    payload = jwt.decode(access_token, public_key, algorithms=["RS256"])
+@router.post("/GPTAudio")
+# async def generate_audio(req: GPTAudioRequest, request: Request) -> StreamingResponse:
+async def generate_audio(req: GPTAudioRequest, request: Request): #! Testing purposes
+    try:
+        access_token = request.headers['Authorization'].split(' ')[1]
+        payload = jwt.decode(access_token, public_key, algorithms=["RS256"])
+    except jwt.exceptions.ExpiredSignatureError:
+        return JSONResponse(content={"detail": "Token has expired"}, status_code=401)
+        
     user_id = payload['sub']
 
     text_path = os.getenv('TEXT_PATH')
     with open(f"{text_path}", "w") as f:
         f.write(req.question)
-    
+        
+    return req.question #! Testing purposes
+        
+    #! TODO
     main()
 
     # load audio file paths from output.json
@@ -57,5 +65,5 @@ async def generate_audio(req: GPTAudioRequest, request: Request) -> StreamingRes
     audio_paths = list()
     for item in dict["content"]:
         audio_paths.append(item["audio_file_path"])
-
+        
     return StreamingResponse(content=file_generator(audio_paths), media_type="audio/mpeg")

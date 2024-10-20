@@ -4,6 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from server.routes.question import router
 
+origins = [
+    "http://localhost",
+    'http://localhost:3000',
+]
 
 def init_routers(app_: FastAPI) -> None:
     inference_human_router = router
@@ -13,7 +17,7 @@ def make_middleware() -> list[Middleware]:
     middleware = [
         Middleware(
             CORSMiddleware,
-            allow_origins=["*"],
+            allow_origins=origins,
             allow_credentials=True,
             allow_methods=["*"],
             allow_headers=["*"],
