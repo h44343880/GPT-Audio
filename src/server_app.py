@@ -60,7 +60,7 @@ def get_audio_for_each_sentence(sentence_emotion_list, gpt_sovits_client, CHARAC
         sentence_emotion['audio_file_path'] = audio_file_path
 
 
-def main():
+def main(user_question, user_id):
     load_dotenv(dotenv_path=".env", override=True)
     LOG_PATH = os.getenv("LOG_DIR")
     absolute_path = os.getcwd() # TODO
@@ -73,13 +73,13 @@ def main():
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     GPT_SOVITS_ENDPOINT = os.getenv("GPT_SOVITS_ENDPOINT")
     CHARACTER_NAME = os.getenv("CHARACTER_NAME")
-    AUDIO_PATH = os.getenv("AUDIO_DIR")
+    AUDIO_PATH = os.getenv("AUDIO_DIR").format(user_id)
     OUTPUT_PATH = os.getenv("OUTPUT_DIR")
     print(f"Loaded env vars, {LOG_PATH}, {PROMPT_PATH}, {ARTICLE_PATH}, {TEXT_PATH}, {OPENAI_API_KEY}, {GPT_SOVITS_ENDPOINT}, {CHARACTER_NAME}, {AUDIO_PATH}, {OUTPUT_PATH}")
     
     # pre-processing prompt
     prompt = read_file(PROMPT_PATH)
-    text = read_file(TEXT_PATH)
+    # user_question = read_file(TEXT_PATH)
     
     # get emotions list
     gpt_sovits_client = GPTSoVITSClient(GPT_SOVITS_ENDPOINT)
@@ -89,13 +89,15 @@ def main():
 
     # generate article
     openai_client = OpenAIClient(api_key=OPENAI_API_KEY)
-    response = openai_client.generate_article(text)
-    with open(ARTICLE_PATH, 'w', encoding='UTF-8') as f:
-        f.write(response)
-    article = read_file(ARTICLE_PATH)
+    article = openai_client.generate_article(user_question)
+    # with open(ARTICLE_PATH, 'w', encoding='UTF-8') as f:
+    #     f.write(response)
+    # article = read_file(ARTICLE_PATH)
     
     # finalize prompt
     finalized_prompt = append_article_to_prompt(prompt=prompt, emotions_list=emotions_list, article=article)
+    
+    print("Finalized prompt: ", finalized_prompt)
     
     # get emotions for each sentence
     openai_client = OpenAIClient(api_key=OPENAI_API_KEY)
@@ -105,14 +107,22 @@ def main():
         # TODO: add to log
         pass
     
+    # gpt_sovits_client.close()
+    
+    # return response
+    
     # parse response
     sentence_emotion_list = get_sentence_emotion_array(response, emotions_list)
     
     # get audio for each sentence
     get_audio_for_each_sentence(sentence_emotion_list, gpt_sovits_client, CHARACTER_NAME, AUDIO_PATH) # TODO: maybe there's a better way?
+    
+    gpt_sovits_client.close()
+    
+    return sentence_emotion_list
         
     # export to json
-    export_to_json(f'{OUTPUT_PATH}/output.json', sentence_emotion_list)
+    # export_to_json(f'{OUTPUT_PATH}/output.json', sentence_emotion_list)
 
     request_real3d(sentence_emotion_list)
 
