@@ -5,6 +5,7 @@ from src.openai_client import OpenAIClient
 import json
 from datetime import datetime
 from src.request_real3d import request_real3d
+import re
 
 def read_file(file_path):
     with open(file_path, 'r', encoding='UTF-8') as f:
@@ -39,10 +40,12 @@ def get_sentence_emotion_array(response, emotions_list):
     return sentence_emotion_array
 
 def save_audio(audio, file_path, character_name, sentence):
-    date = datetime.today().strftime('%m-%d-%H-%M-%S')
-    filename = f"{character_name}_{sentence}_{date}.mp3"
+    date = datetime.today().strftime('%m-%d-%H-%M-%S-%f')    
+    sanitized_sentence = re.sub(r'[^a-zA-Z0-9_]', '', sentence)[:10]
+
+    filename = f"{character_name}_{sanitized_sentence}_{date}.mp3"
     audio_file_path = f"{file_path}/{filename}"
-    
+        
     # Ensure the directory exists
     os.makedirs(os.path.dirname(audio_file_path), exist_ok=True)
 
