@@ -54,16 +54,19 @@ def save_audio(audio, file_path, character_name, sentence):
         audio_file.write(audio)
     return audio_file_path
 
-def get_audio_for_each_sentence(sentence_emotion_list, gpt_sovits_client, CHARACTER_NAME, AUDIO_PATH):
+def get_audio_for_each_sentence(sentence_emotion_list, gpt_sovits_client, CHARACTER_NAME, AUDIO_PATH, user_id, access_token):
     for sentence_emotion in sentence_emotion_list:
         audio = gpt_sovits_client.get_audio_with_post(character=CHARACTER_NAME, emotion=sentence_emotion['emotion'], text=sentence_emotion['sentence'])
         # save audio to audio directory
         audio_file_path = save_audio(audio, AUDIO_PATH, CHARACTER_NAME, sentence_emotion['sentence'])
         # save audio file path to sentence_emotion
         sentence_emotion['audio_file_path'] = audio_file_path
+                
+        # TODO: add to kafka or rabbitmq instead of directly post to real3d
+        request_real3d(audio_file_path, sentence_emotion['emotion'], user_id, access_token) # TODO: add user_id
 
 
-def main(user_question, user_id):
+def main(user_question, user_id, access_token):
     load_dotenv(dotenv_path=".env", override=True)
     LOG_PATH = os.getenv("LOG_DIR")
     absolute_path = os.getcwd() # TODO
@@ -118,7 +121,7 @@ def main(user_question, user_id):
     sentence_emotion_list = get_sentence_emotion_array(response, emotions_list)
     
     # get audio for each sentence
-    get_audio_for_each_sentence(sentence_emotion_list, gpt_sovits_client, CHARACTER_NAME, AUDIO_PATH) # TODO: maybe there's a better way?
+    get_audio_for_each_sentence(sentence_emotion_list, gpt_sovits_client, CHARACTER_NAME, AUDIO_PATH, user_id, access_token) # TODO: maybe there's a better way?
     
     gpt_sovits_client.close()
     
