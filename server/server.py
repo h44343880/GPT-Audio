@@ -3,7 +3,6 @@ from fastapi.middleware import Middleware
 from fastapi.middleware.cors import CORSMiddleware
 
 from server.routes.question import router
-from server.gpt import main
 
 origins = [
     "http://localhost",
@@ -36,7 +35,6 @@ def create_app() -> FastAPI:
         middleware=make_middleware(),
     )
     init_routers(app_=app_)
-    main()
     return app_
 
 
