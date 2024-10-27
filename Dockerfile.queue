@@ -3,10 +3,24 @@ FROM rabbitmq:4.0-management
 # Expose the necessary ports
 EXPOSE 5672 15672
 
+# Create a non-root user
+RUN adduser -D synthheadUser
+
 # Enable the RabbitMQ management plugin
 RUN rabbitmq-plugins enable --offline rabbitmq_management
 
 # Configure RabbitMQ to allow remote connections
 COPY rabbitmq.conf /etc/rabbitmq/rabbitmq.conf
+
+COPY receive_message.sh /home/synthheadUser/receive_message.sh
+
+# Make the script executable
+RUN chmod +x /home/synthheadUser/GPT-Audio.sh
+
+# Change ownership of the script and .ssh directory to the non-root user
+RUN chown -R synthheadUser:synthheadUser /home/synthheadUser
+
+# Switch to the non-root user
+USER synthheadUser
 
 CMD ["sh", "/home/synthheadUser/receive_message.sh"]
