@@ -4,7 +4,6 @@ from src.gpt_sovits_client import GPTSoVITSClient
 from src.openai_client import OpenAIClient
 import json
 from datetime import datetime
-from src.request_real3d import request_real3d
 import re
 import pika
 
@@ -61,25 +60,36 @@ def publish_audio_to_queue(audio_file_path, emotion, user_id, queue_name, channe
         "audio_file_path": audio_file_path
     }
     channel.basic_publish(exchange='', routing_key=queue_name, body=json.dumps(data))
-    print(f" [x] Sent {data}")
+    print(f" [x] Sent audio {data} to {queue_name}")
 
-def get_audio_for_each_sentence(sentence_emotion_list, CHARACTER_NAME, AUDIO_PATH, user_id, access_token, channel, queue_name):
+def publish_video_to_queue(audio_file_path, emotion, user_id, queue_name, channel, access_token):
+    data = {
+        "drv_aud": audio_file_path,
+        "emotion": emotion,
+        "user_id": user_id,
+        "access_token": access_token
+    }
+    channel.basic_publish(exchange='', routing_key=queue_name, body=json.dumps(data))
+    print(f" [x] Sent video {data} to {queue_name}")
+
+def get_audio_for_each_sentence(sentence_emotion_list, CHARACTER_NAME, AUDIO_PATH, user_id, access_token, channel, audio_queue_name, video_queue_name):
     for sentence_emotion in sentence_emotion_list:
-        print(f"Processing sentence: {sentence_emotion['sentence']} with emotion: {sentence_emotion['emotion']} queue_name: {queue_name}")
+        print(f"Processing sentence: {sentence_emotion['sentence']} with emotion: {sentence_emotion['emotion']}")
         
         # save audio to audio directory
         audio_file_path = get_audio_path( AUDIO_PATH, CHARACTER_NAME, sentence_emotion['sentence'])
         # save audio file path to sentence_emotion
         sentence_emotion['audio_file_path'] = audio_file_path
                 
-        publish_audio_to_queue(sentence_emotion['audio_file_path'], sentence_emotion['emotion'], user_id, queue_name, channel, access_token, sentence_emotion['sentence'])
-        # request_real3d(audio_file_path, sentence_emotion['emotion'], user_id, access_token) # TODO: add user_id
-        
-def gpt_audio_queue_connection(rabbitmq_url, queue_name):
+        publish_audio_to_queue(sentence_emotion['audio_file_path'], sentence_emotion['emotion'], user_id, audio_queue_name, channel, access_token, sentence_emotion['sentence'])
+        publish_video_to_queue(audio_file_path, sentence_emotion['emotion'], user_id, video_queue_name, channel, access_token)
+
+def get_broker_connection(rabbitmq_url, audio_queue_name, video_queue_name):
     connection = pika.BlockingConnection(pika.URLParameters(rabbitmq_url))
     channel = connection.channel()
 
-    channel.queue_declare(queue=queue_name, durable=True)
+    channel.queue_declare(queue=audio_queue_name, durable=True)
+    channel.queue_declare(queue=video_queue_name, durable=True)
     return connection, channel
 
 def main(user_question, user_id, access_token):
@@ -99,9 +109,10 @@ def main(user_question, user_id, access_token):
     OUTPUT_PATH = os.getenv("OUTPUT_DIR")
     RABBITMQ_URL = os.getenv("RABBITMQ_URL")
     AUDIO_QUEUE = os.getenv("AUDIO_QUEUE")
-    print(f"Loaded env vars, {LOG_PATH}, {PROMPT_PATH}, {ARTICLE_PATH}, {TEXT_PATH}, {OPENAI_API_KEY}, {GPT_SOVITS_ENDPOINT}, {CHARACTER_NAME}, {AUDIO_PATH}, {OUTPUT_PATH}, {RABBITMQ_URL}, {AUDIO_QUEUE}")
+    VIDEO_QUEUE = os.getenv("VIDEO_QUEUE")
+    print(f"Loaded env vars, {LOG_PATH}, {PROMPT_PATH}, {ARTICLE_PATH}, {TEXT_PATH}, {OPENAI_API_KEY}, {GPT_SOVITS_ENDPOINT}, {CHARACTER_NAME}, {AUDIO_PATH}, {OUTPUT_PATH}, {RABBITMQ_URL}, {AUDIO_QUEUE}, {VIDEO_QUEUE}")
     
-    gpt_connection, audio_channel = gpt_audio_queue_connection(RABBITMQ_URL, AUDIO_QUEUE)
+    broker_connection, channel = get_broker_connection(RABBITMQ_URL, AUDIO_QUEUE, VIDEO_QUEUE)
 
     # pre-processing prompt
     prompt = read_file(PROMPT_PATH)
@@ -141,17 +152,15 @@ def main(user_question, user_id, access_token):
     sentence_emotion_list = get_sentence_emotion_array(response, emotions_list)
     
     # get audio for each sentence
-    get_audio_for_each_sentence(sentence_emotion_list, CHARACTER_NAME, AUDIO_PATH, user_id, access_token, audio_channel, AUDIO_QUEUE) # TODO: maybe there's a better way?
+    get_audio_for_each_sentence(sentence_emotion_list, CHARACTER_NAME, AUDIO_PATH, user_id, access_token, channel, AUDIO_QUEUE, VIDEO_QUEUE) # TODO: maybe there's a better way?
     
     gpt_sovits_client.close()
-    gpt_connection.close()
+    broker_connection.close()
     
     return sentence_emotion_list
         
     # export to json
     # export_to_json(f'{OUTPUT_PATH}/output.json', sentence_emotion_list)
-
-    request_real3d(sentence_emotion_list)
 
     # close gpt sovits connection    
     gpt_sovits_client.close()
