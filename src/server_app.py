@@ -45,9 +45,6 @@ def get_audio_path(file_path, character_name, sentence):
 
     filename = f"{character_name}_{sanitized_sentence}_{date}.mp3"
     audio_file_path = f"{file_path}/{filename}"
-        
-    # Ensure the directory exists
-    os.makedirs(os.path.dirname(audio_file_path), exist_ok=True)
 
     return audio_file_path
 
