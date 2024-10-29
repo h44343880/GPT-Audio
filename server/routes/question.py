@@ -44,18 +44,16 @@ async def generate_audio(req: GPTAudioRequest, request: Request): #! Testing pur
         access_token = request.headers['Authorization'].split(' ')[1]
         payload = jwt.decode(access_token, public_key, algorithms=["RS256"])
     except jwt.exceptions.ExpiredSignatureError:
-        return JSONResponse(content={"detail": "Token has expired"}, status_code=401)
+        return JSONResponse(content={"message": "Token has expired"}, status_code=401)
         
     user_id = payload['sub']
 
-    text_path = os.getenv('TEXT_PATH')
-    with open(f"{text_path}", "w") as f:
-        f.write(req.question)
-        
-    return req.question #! Testing purposes
-        
-    #! TODO
-    main()
+    # text_path = os.getenv('TEXT_PATH')
+    # with open(f"{text_path}", "w") as f:
+    #     f.write(req.question)
+                
+    # TODO: try returning the response(with audio paths first) first then run the get audio function and then save the audios, so when the user requests the audio, it will be ready
+    return main(req.question, user_id, access_token)
 
     # load audio file paths from output.json
     output_json_folder = os.getenv('OUTPUT_DIR')
