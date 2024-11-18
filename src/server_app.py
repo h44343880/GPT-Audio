@@ -48,29 +48,35 @@ def get_audio_path(file_path, character_name, sentence):
 
     return audio_file_path
 
-def publish_audio_to_queue(audio_file_path, emotion, user_id, queue_name, channel, access_token, sentence):
+def publish_audio_to_queue(audio_file_path, emotion, user_id, queue_name, channel, access_token, sentence, group_id, sequence_number):
     data = {
+        "group_id": group_id,
         "sentence": sentence,
         "emotion": emotion,
         "user_id": user_id,
         "access_token": access_token,
-        "audio_file_path": audio_file_path
+        "audio_file_path": audio_file_path,
+        "sequence_number": sequence_number
     }
     channel.basic_publish(exchange='', routing_key=queue_name, body=json.dumps(data))
     print(f" [x] Sent audio {data} to {queue_name}")
 
-def publish_video_to_queue(audio_file_path, emotion, user_id, queue_name, channel, access_token):
+def publish_video_to_queue(audio_file_path, emotion, user_id, queue_name, channel, access_token, group_id, sequence_number):
     data = {
+        "group_id": group_id,
         "drv_aud": audio_file_path,
         "emotion": emotion,
         "user_id": user_id,
-        "access_token": access_token
+        "access_token": access_token,
+        "sequence_number": sequence_number
     }
     channel.basic_publish(exchange='', routing_key=queue_name, body=json.dumps(data))
     print(f" [x] Sent video {data} to {queue_name}")
 
 def get_audio_for_each_sentence(sentence_emotion_list, CHARACTER_NAME, AUDIO_PATH, user_id, access_token, channel, audio_queue_name, video_queue_name):
-    for sentence_emotion in sentence_emotion_list:
+    group_id = user_id + datetime.today().strftime('%m-%d-%H-%M-%S-%f')
+    
+    for idx, sentence_emotion in enumerate(sentence_emotion_list):
         print(f"Processing sentence: {sentence_emotion['sentence']} with emotion: {sentence_emotion['emotion']}")
         
         # save audio to audio directory
@@ -78,8 +84,8 @@ def get_audio_for_each_sentence(sentence_emotion_list, CHARACTER_NAME, AUDIO_PAT
         # save audio file path to sentence_emotion
         sentence_emotion['audio_file_path'] = audio_file_path
                 
-        publish_audio_to_queue(sentence_emotion['audio_file_path'], sentence_emotion['emotion'], user_id, audio_queue_name, channel, access_token, sentence_emotion['sentence'])
-        publish_video_to_queue(audio_file_path, sentence_emotion['emotion'], user_id, video_queue_name, channel, access_token)
+        publish_audio_to_queue(sentence_emotion['audio_file_path'], sentence_emotion['emotion'], user_id, audio_queue_name, channel, access_token, sentence_emotion['sentence'], group_id=group_id, sequence_number = idx)
+        publish_video_to_queue(audio_file_path, sentence_emotion['emotion'], user_id, video_queue_name, channel, access_token, group_id=group_id, sequence_number = idx)
 
 def get_broker_connection(rabbitmq_url, audio_queue_name, video_queue_name):
     connection = pika.BlockingConnection(pika.URLParameters(rabbitmq_url))
